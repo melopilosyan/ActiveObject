@@ -5,5 +5,4 @@ class User
     @name = name
     @surname = surname
   end
-
 end
