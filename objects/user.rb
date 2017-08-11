@@ -6,5 +6,4 @@ class User
     @surname = surname
     @age = 0
   end
-
 end
