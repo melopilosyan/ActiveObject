@@ -18,7 +18,7 @@ class Base
       case answer
         when "y"
          user = User.new name, surname
-         f = File.open('data/test.json' , "a")
+         f = File.open('data/user.json' , "a")
          f.puts user.to_js
          puts " Account is saved"
         break
@@ -34,7 +34,7 @@ class Base
  end
  
  def all_users
-  File.readlines('data/test.json').each do |line|
+  File.readlines('data/user.json').each do |line|
     user = JSON.parse(line)
     user_id = user["id"]
     @users[user_id]= user
