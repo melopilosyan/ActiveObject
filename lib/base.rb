@@ -1,22 +1,35 @@
+require "json"
+
 class Base
 
   def initialize
   end
 
-  def to_json
+  def to_hash
     hash = {}
     self.instance_variables.each do |var|
-      hash[var.to_s.delete("@")] = self.instance_variable_get var
+      hash[var.to_s.delete('@').to_sym] = self.instance_variable_get var
     end
-    JSON.generate(hash)
+    hash
+  end
+
+  def to_json
+    JSON.generate to_hash
   end
    
-  def from_json(json_string)
-    self.new 
+  def self.from_json(json_string)
+   from_hash JSON.parse(json_string)
   end
   
-
-
+  def self.from_hash(hash)
+    o = new
+    hash.each do |k,v|
+      if o.respond_to?("#{k}=")
+        o.send "#{k}=", v
+      end
+    end
+    o
+  end
 
 
 
@@ -68,4 +81,5 @@ class Base
   
   def delete_all_users
   end
+
 end
