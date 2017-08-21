@@ -21,3 +21,4 @@ while input
 	      input = gets.chomp.to_i
 	end
 end
+
