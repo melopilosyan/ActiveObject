@@ -1,8 +1,28 @@
 require "json"
 
 class Base
+  attr_accessor :id
 
-  def initialize
+  def self.inherited(child)
+    if Dir.exist?("data/#{child.name.downcase}")
+     child.count = Dir.glob("data/#{child.name.downcase}/*.json").size
+    else
+      Dir.mkdir("data/#{child.name.downcase}")
+      child.count = 0
+    end
+  end
+  
+  def self.count=(count)
+    @count = count
+  end
+
+  def self.next_id
+    @count += 1
+  end
+
+  def initialize(hash = nil)
+   @id = self.class.next_id  
+   self.update hash
   end
 
   def to_hash
@@ -20,22 +40,39 @@ class Base
   def self.from_json(json_string)
    from_hash JSON.parse(json_string)
   end
-  
-  def self.from_hash(hash)
-    o = new
+
+  def update(hash)
+    unless  hash.kind_of? Hash
+      return self
+    end
     hash.each do |k,v|
-      if o.respond_to?("#{k}=")
-        o.send "#{k}=", v
+      if self.respond_to?("#{k}=")
+        self.send "#{k}=", v
       end
     end
-    o
+    self
   end
 
+  def self.from_hash(hash)
+    new.update hash
+  end
 
+  def save
+    File.write self.class.file_path(id), to_json
+  end
 
+  def self.search_by_id(id)
+    if File.exist? file_path(id)
+      from_json File.read file_path(id)
+    else
+      nil
+    end
 
+  end
 
-
+  def self.file_path(id)
+    "data/#{self.name.downcase}/#{id}.json"
+  end
 
 
 
@@ -79,7 +116,4 @@ class Base
     end
   end
   
-  def delete_all_users
-  end
-
 end
