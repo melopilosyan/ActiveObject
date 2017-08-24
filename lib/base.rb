@@ -127,48 +127,4 @@ class Base
   def save
     File.write self.class.file_path(id), to_json
   end
-
-
-
-
-
-  def add 
-    print "User name: "
-    name = gets.chomp
-    print "User surname: "
-    surname = gets.chomp
-    a = "Do you want to save user? (y/n)"
-    puts a
-    answer = gets.chomp.to_s
-    while answer
-      case answer
-       when "y"
-        user = User.new name, surname
-        f = File.open('data/.json' , "a")
-        f.puts user.to_js
-        f.close
-        puts " Account is saved"
-       break
-       when "n"
-        puts " Account is not saved"
-       break
-    else 
-        puts"No valid command, try again!"
-        puts a
-        answer = gets.chomp.to_s
-      end
-    end
-  end
-
-  def all_users
-    File.readlines('data/user.json').each do |line|
-      user = JSON.parse(line)
-      user_id = user["id"]
-      @users[user_id]= user
-    end
-    @users.each do |key, value|
-      puts "#{value["name"]} #{value["surname"]}" 
-    end
-  end
-  
 end
