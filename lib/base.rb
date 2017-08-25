@@ -80,13 +80,12 @@ class Base
     end
 
     def field(field_name, field_type)
-      define_method("#{field_name}=") do |name|
-        name
-
+      define_method("#{field_name}=") do |param|
+     raise TypeError, "Expected #{field_type.to_s.capitalize} given #{param.class}" if param.class.name.downcase != field_type.to_s
+         
+        instance_variable_set "@#{field_name}", param
       end
-      define_method("#{field_name}") do
-        "@#{field_name}"
-      end
+      attr_reader field_name
     end
 
   end
