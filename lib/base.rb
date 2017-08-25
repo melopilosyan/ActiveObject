@@ -2,7 +2,7 @@ require "json"
 
 class Base
   attr_accessor :id
-  
+
   class << self
 
     def inherited(child)
@@ -16,7 +16,6 @@ class Base
 
     def count=(count)
       @count = count
-
     end
 
     def next_id
@@ -75,56 +74,66 @@ class Base
     end
 
     def create(hash)
-     o = new hash
-     o.save
-     o
+      o = new hash
+      o.save
+      o
     end
-    
-  end
 
+    def field(field_name, field_type)
+      define_method("#{field_name}=") do |name|
+        name
 
-
-  def initialize(hash = nil)
-   @id = self.class.next_id
-   self.update hash
-  end
-
-  def to_hash
-    hash = {}
-    self.instance_variables.each do |var|
-      hash[var.to_s.delete('@').to_sym] = self.instance_variable_get var
-    end
-    hash
-  end
-
-  def to_json
-    JSON.generate to_hash
-  end
-
-  def to_s
-    s = "#{self.class}("
-    self.to_hash.each do |k,v|
-      if v.is_a? String
-        s += "#{k}: \"#{v}\", "
-      else
-        s += "#{k}: #{v}, "
+      end
+      define_method("#{field_name}") do
+        "@#{field_name}"
       end
     end
-    s.gsub /..$/, ')'
-  end
-  alias :inspect :to_s
 
-  def update(hash)
-    return self unless  hash.kind_of? Hash
-    hash.each do |k,v|
-      if self.respond_to?("#{k}=")
-        self.send "#{k}=", v
-      end
+  end
+
+
+    def initialize(hash = nil)
+      @id = self.class.next_id
+      self.update hash
     end
-    self
-  end
 
-  def save
-    File.write self.class.file_path(id), to_json
+
+    def to_hash
+      hash = {}
+      self.instance_variables.each do |var|
+        hash[var.to_s.delete('@').to_sym] = self.instance_variable_get var
+      end
+      hash
+    end
+
+    def to_json
+      JSON.generate to_hash
+    end
+
+    def to_s
+      s = "#{self.class}("
+      self.to_hash.each do |k,v|
+        if v.is_a? String
+          s += "#{k}: \"#{v}\", "
+        else
+          s += "#{k}: #{v}, "
+        end
+      end
+      s.gsub /..$/, ')'
+    end
+    alias :inspect :to_s
+
+    def update(hash)
+      return self unless  hash.kind_of? Hash
+      hash.each do |k,v|
+        if self.respond_to?("#{k}=")
+          self.send "#{k}=", v
+        end
+      end
+      self
+    end
+
+    def save
+      File.write self.class.file_path(id), to_json
+    end
   end
-end

@@ -1,6 +1,7 @@
 require_relative "../lib/base"
 
 class User < Base
-  attr_accessor :name, :surname
+   field :name, :string
+   field :surname , :string
 end
 
