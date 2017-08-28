@@ -1,12 +1,13 @@
 require "json"
 require_relative "visible.rb"
 require_relative "search.rb"
+require "active_support/inflector"
 
 class Base
 
   attr_accessor :id
 
-  include Search
+  extend Search
   include Visible
 
   def self.counter
@@ -17,7 +18,6 @@ class Base
     @counter = c
   end 
 
-
   def self.field_types  
     @field_types
   end
@@ -25,9 +25,6 @@ class Base
   def self.field_types=(o)
     @field_types = o
   end
-
-
-
 
   def initialize(data)
 
@@ -90,6 +87,10 @@ class Base
     File.write(self.class.gen_path(id), to_json)
   end
 
+  def self.create(data = nil) 
+    new(data).save
+  end
+
   def self.table
     head, list = [], []
     find(1).to_hash.each do |k, v|
@@ -121,6 +122,26 @@ class Base
     define_method(name.to_s + "=") do |param|
       raise TypeError.new("expected #{type} but given #{param.class}") unless param.class.name.downcase == type.to_s.downcase 
       instance_variable_set("@"+ name.to_s, param)
+    end
+  end
+
+  def class_exists?(class_name)
+      klass = Module.const_get(class_name)
+        return klass.is_a?(Class)
+  rescue NameError
+      return false
+  end
+
+  def self.has_many(*list)
+    list.each do |companies|
+        if class_exists?(companies.to_s.classify)
+          define_method("#{companies}") do
+            self.class.where("#{self.downcase}_id == #{self.id}")  
+          end
+        else
+          raise ArgumentError.new("class #{companies.to_s.classify} not defined")
+        end 
+
     end
   end
 end

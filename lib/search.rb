@@ -95,9 +95,4 @@ module Search
         when_string(cond, objects, findes)
     end
   end
-
-  def self.included(base)
-    base.extend self
-  end
-
 end
