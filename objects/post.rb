@@ -1,7 +1,8 @@
 require_relative "../lib/base.rb"
 
 class Post < Base 
-  attr_accessor :attr1, :attr2, :id
+  field :attr1, :string
+  field :attr2, :string
 end
 
 

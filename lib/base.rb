@@ -1,8 +1,12 @@
 require "json"
 require_relative "visible.rb"
+require_relative "search.rb"
 
 class Base
 
+  attr_accessor :id
+
+  include Search
   include Visible
 
   def self.counter
@@ -11,9 +15,23 @@ class Base
 
   def self.counter=(c) 
     @counter = c
+  end 
+
+
+  def self.field_types  
+    @field_types
   end
 
-  def initialize(data = nil)
+  def self.field_types=(o)
+    @field_types = o
+  end
+
+
+
+
+  def initialize(data)
+
+    return if data.nil?
     @id = self.class.counter
     self.class.counter = self.class.counter + 1
     data.each do |k, v| 
@@ -21,6 +39,11 @@ class Base
         send("#{k}=", v)
       end
     end
+  end
+
+  def self.new(data = nil) 
+    raise "\n> class Base is abstract and cant having instances " if self.name == "Base"
+    super(data)
   end
 
   def to_hash
@@ -40,7 +63,7 @@ class Base
   end
   
   def self.from_hash(hash)
-    inst = new({})
+    inst = new()
     hash.each do |k, v|
       if inst.respond_to?("#{k}=")
         inst.send("#{k}=", v)
@@ -53,9 +76,10 @@ class Base
     "../data/#{self.name.downcase}/#{var_path}.json"
   end
 
-  def self.inherited(child) 
+  def self.inherited(child)
+    
     if Dir.exist?("../data/#{child.name.downcase}")
-       child.counter = Dir.glob("../data/#{child.name.downcase}/*.json").size + 1
+       child.counter = Dir.glob("../data/#{child.name.downcase}/*.json").size + 1 
     else
        Dir.mkdir("../data/#{child.name.downcase}")
         child.counter = 1
@@ -65,48 +89,6 @@ class Base
   def save
     File.write(self.class.gen_path(id), to_json)
   end
-
-  def self.find(search_id) 
-     path = gen_path(search_id)    
-    if File.exist?(path)
-      json_str = File.read(path).strip
-      from_json(json_str)
-    else
-      nil
-    end
-  end
-
-  def self.all 
-    Dir.glob(gen_path("*")).map do |path|
-      from_json(File.read(path).strip)
-    end
-  end
-
-  def check_field_names(hash)
-    hash.each do |k, v| 
-      raise "field :#{k} not found for #{self.class.name}" unless self.respond_to? k
-    end
-  end
-
-  def self.where(hash)
-    raise "invalid argument" unless hash.kind_of?(Hash)
-    findes = []
-    objects = all
-    objects[0].check_field_names hash
-
-    objects.each do |o|
-      valid = true
-      hash.each do |k, v|
-        if o.send(k) != v
-          valid = false
-          break
-        end
-      end
-      findes << o if valid
-    end
-    findes
-  end
-
 
   def self.table
     head, list = [], []
@@ -122,9 +104,23 @@ class Base
 
   def inspect 
     str = "#{self.class}("
-    self.instance_variables.each do |var|
+    vars = self.instance_variables
+    return str + ")" if vars.empty?
+    vars.each do |var|
       str += var.to_s.delete('@') + ": \"" + self.instance_variable_get(var).to_s + "\", "
     end
     str.gsub /..$/, ')'
+  end
+
+  def self.field(name, type)
+    if self.field_types.nil?
+      self.field_types = {:id => "integer"}
+    end
+    self.field_types[name] = type.to_s
+    attr_reader name
+    define_method(name.to_s + "=") do |param|
+      raise TypeError.new("expected #{type} but given #{param.class}") unless param.class.name.downcase == type.to_s.downcase 
+      instance_variable_set("@"+ name.to_s, param)
+    end
   end
 end
