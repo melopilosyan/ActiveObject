@@ -1,6 +1,7 @@
-require "json"
+require_relative "utils"
 
 class Base
+  include Utils
   attr_accessor :id
 
   class << self
@@ -82,10 +83,30 @@ class Base
     def field(field_name, field_type)
       define_method("#{field_name}=") do |param|
      raise TypeError, "Expected #{field_type.to_s.capitalize} given #{param.class}" if param.class.name.downcase != field_type.to_s
-         
         instance_variable_set "@#{field_name}", param
       end
       attr_reader field_name
+    end
+    
+    def belongs_to(class_name)
+       if class_name.class?
+         define_method(class_name) do
+           klass = Module.const_get(class_name.to_s.classify)
+           klass.search_by_id("#{class_name}_id".to_sym)
+         end
+   
+       end
+    end
+
+    def has_many(class_name)
+      if class_name.class?
+        define_method(class_name) do
+         klass = Module.const_get(class_name.to_s.classify)
+         klass.where "#{self.class.name.downcase}_id".to_sym => id
+        end
+      else
+        raise NameError, "Given #{class_name} expected existing class name"
+      end
     end
 
   end
