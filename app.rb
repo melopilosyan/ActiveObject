@@ -20,7 +20,7 @@ class App
   end
 
   def second_page
-    puts "1: See my INFO, 2: POSTS, 3: EDIT, 4: EXIT"
+    puts "1: See my INFO, 2: POSTS, 3: EDIT, 0: EXIT"
     case gets_i
     when 1
       my_info
@@ -30,7 +30,7 @@ class App
     when 3
       edit_user
       second_page
-    when 4 
+    when 0 
       log_out
     else
       second_page
@@ -143,11 +143,16 @@ EOF
   end
 
   def list_posts
+    puts "LIST POSTS"
+    posts =  @user.posts
+    if posts.length > 0
       puts "\nYour posts: "
-      posts =  @user.posts
       posts.each_with_index do |post,i|
-          puts "#{i+1}. Post title: #{post.title}, description: #{post.description}"
+        puts "#{i+1}. Post title: #{post.title}, description: #{post.description}"
       end
+    else
+      puts "You have not a posts"
+    end
   end
 
   def delete_post
