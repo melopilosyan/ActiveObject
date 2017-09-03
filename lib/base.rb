@@ -103,6 +103,7 @@ class Base
       #raise NameError, "Given #{class_name} expected existing class name"
     end
 
+<<<<<<< HEAD
     def bef_create_func
 	@bef_create_func || []
     end 
@@ -114,6 +115,10 @@ class Base
 
     def bef_des_func
         @bef_des_func || []
+=======
+    def bef_des_func
+       @bef_des_func || []
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
     end
 
     def before_destroy(func_names)
@@ -121,6 +126,7 @@ class Base
       @bef_des_func.push func_names
     end
 
+<<<<<<< HEAD
     def bef_save_func
 	@bef_save_func || []
     end
@@ -159,6 +165,8 @@ class Base
 
 
 
+=======
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
   end
 
 

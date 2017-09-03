@@ -46,11 +46,14 @@ class App
     @user =  User.where(email: email).first
     if @user.nil? 
       puts "Sorry, no registered user with given email"
+<<<<<<< HEAD
       users_email.each do |emaill|
         if  emaill.include? email[0]
 	puts "Did you mean ?  #{emaill}"
 	end
       end
+=======
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
       log_in
     elsif @user.password != password
       puts "Password is not match"
@@ -75,7 +78,11 @@ class App
     print "Submit your data[y/n]? "
     if yes
       user.save
+<<<<<<< HEAD
       puts "Congrats User is saved!!!"
+=======
+      puts "User is saved!!!"
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
     end
   end
 
@@ -148,7 +155,11 @@ EOF
   end
 
   def list_posts
+<<<<<<< HEAD
     puts "\nLIST POSTS"
+=======
+    puts "LIST POSTS"
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
     posts =  @user.posts
     if posts.length > 0
       puts "\nYour posts: "
@@ -214,6 +225,7 @@ EOF
     puts "\nBye"
   end
 
+<<<<<<< HEAD
   def users_email
 	  emails = []
      User.all.each do |user|
@@ -222,6 +234,8 @@ EOF
      emails
   end
 
+=======
+>>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
 end
 
 
