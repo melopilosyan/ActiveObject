@@ -68,7 +68,13 @@ class App
   def registration
     @user = User.new
     print "Name: "
-    @user.name = gets_chomp
+    name = gets_chomp
+    if !name.empty?
+    @user.name = name
+    else
+	    puts "Please Input User name "
+	    @user.name = gets_chomp
+    end
     print "Surname: "
     @user.surname = gets_chomp
     print "Age: "
@@ -173,22 +179,20 @@ EOF
   def list_posts
     puts "\nLIST POSTS"
     posts =  @user.posts
-    if posts.length > 0
+    if posts.empty?
+	    puts "You have not a posts"
+	    post_settings
+    else
       puts "\nYour posts: "
       posts.each_with_index do |post,i|
         puts "#{i+1}. Post title: #{post.title}, description: #{post.description}"
       end
-    else
-      puts "You have not a posts"
     end
     posts
   end
 
   def delete_post
     posts = list_posts
-    if posts.empty?
-      puts "You have not a posts"
-    else
       puts "Which one do you want to delete?(Number of post)"
       answer = gets_i
       if answer > posts.length
@@ -201,7 +205,6 @@ EOF
           puts "Post is deleted!!!\n"
         end
       end
-    end
   end
 
   def edit_post

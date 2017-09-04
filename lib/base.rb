@@ -110,20 +110,25 @@ class Base
     end
     
     def define_event_handlers_for(event_name)
+      define_singleton_method("before_#{event_name}_func") do
+        instance_variable_get("@before_#{event_name}_func") || []
+      end
+
+      define_singleton_method("after_#{event_name}_func") do
+        instance_variable_get("@after_#{event_name}_func") || []
+      end
+
       define_singleton_method("before_#{event_name}") do |*call_back_list|
         instance_variable_set "@before_#{event_name}_func", [] if instance_variable_get("@before_#{event_name}_func").nil?
         instance_variable_get("@before_#{event_name}_func").concat call_back_list
       end
+
       define_singleton_method("after_#{event_name}") do |*call_back_list|
-        instance_variable_set "@after_#{event_name}_func", [] if instance_variable_get("@before_#{event_name}_func").nil?
+        instance_variable_set "@after_#{event_name}_func", [] if instance_variable_get("@after_#{event_name}_func").nil?
         instance_variable_get("@after_#{event_name}_func").concat call_back_list
       end
-      define_singleton_method("before_#{event_name}_func") do
-        instance_variable_get("@before_#{event_name}_func") || []
-      end
-      define_singleton_method("after_#{event_name}_func") do
-        instance_variable_get("@after_#{event_name}_func") || []
-      end
+
+
     end
 
   def delete_all
