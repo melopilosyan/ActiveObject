@@ -76,8 +76,14 @@ class Base
 
     def create(hash)
       o = new hash
+    self.class.before_create_func.each do |callback|
+      self.send callback
+    end
       o.save
-      o
+    self.class.after_create_func.each do |callback|
+      self.send callback
+    end
+    o
     end
 
     def field(field_name, field_type)
@@ -102,71 +108,32 @@ class Base
       end
       #raise NameError, "Given #{class_name} expected existing class name"
     end
-
-<<<<<<< HEAD
-    def bef_create_func
-	@bef_create_func || []
-    end 
-
-    def before_create(func_names)
-	@bef_create_func = [] if @bef_create_func.nil?
-	@bef_create_func.push func_names
-    end
-
-    def bef_des_func
-        @bef_des_func || []
-=======
-    def bef_des_func
-       @bef_des_func || []
->>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
-    end
-
-    def before_destroy(func_names)
-      @bef_des_func = [] if @bef_des_func.nil?
-      @bef_des_func.push func_names
-    end
-
-<<<<<<< HEAD
-    def bef_save_func
-	@bef_save_func || []
-    end
     
-    def before_save(func_names)
-	@bef_save_func = [] if @bef_save.nil?
-	@bef_save_func.push func_names
+    def define_event_handlers_for(event_name)
+      define_singleton_method("before_#{event_name}") do |*call_back_list|
+        instance_variable_set "@before_#{event_name}_func", [] if instance_variable_get("@before_#{event_name}_func").nil?
+        instance_variable_get("@before_#{event_name}_func").concat call_back_list
+      end
+      define_singleton_method("after_#{event_name}") do |*call_back_list|
+        instance_variable_set "@after_#{event_name}_func", [] if instance_variable_get("@before_#{event_name}_func").nil?
+        instance_variable_get("@after_#{event_name}_func").concat call_back_list
+      end
+      define_singleton_method("before_#{event_name}_func") do
+        instance_variable_get("@before_#{event_name}_func") || []
+      end
+      define_singleton_method("after_#{event_name}_func") do
+        instance_variable_get("@after_#{event_name}_func") || []
+      end
     end
 
-    def aft_save_func
-        @aft_save_func || []
+  def delete_all
+    all.each do |o|
+      o.delete 
     end
-
-    def after_save(func_names)
-	@aft_save_func = [] if @aft_save_func.nil?
-	@aft_save_func.push func_names
-    end
-
-    def aft_create_func
-	@aft_create_func || []
-    end 
-
-    def after_create(func_names)
-	@aft_create_func = [] if @aft_create_func.nil?
-	@aft_create_func.push func_names
-    end
-
-    def aft_des_func
-        @aft_des_func || []
-    end
-
-    def after_destroy(func_names)
-        @aft_des_func = [] if @aft_des_func.nil?
-        @aft_des_func.push func_names
-    end
+    true
+  end
 
 
-
-=======
->>>>>>> e15d3d5c6ea10d2fd892b175608a108960a3415f
   end
 
 
@@ -212,19 +179,35 @@ class Base
   end
 
   def save
+    self.class.before_save_func.each do |callback|
+      self.send callback
+    end
+
     File.write self.class.file_path(id), to_json
+
+    self.class.after_save_func.each do |callback|
+      self.send callback
+    end
+    true
   end
 
   def delete
-    self.class.bef_des_func.each do |func_name|
-      self.send func_name
+    self.class.before_destroy_func.each do |callback|
+      self.send callback
     end
-    File.delete self.class.file_path(id)
+
+    result = nil
+    result = File.delete self.class.file_path(id) if File.exists? self.class.file_path(id)
+
+    self.class.after_destroy_func.each do |callback|
+      self.send callback
+    end
+    result
   end
   
 
-  def delete_all
-    #TODO delete object instances
-  end
 
+  define_event_handlers_for :destroy
+  define_event_handlers_for :save
+  define_event_handlers_for :create
 end

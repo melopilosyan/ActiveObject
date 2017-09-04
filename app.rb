@@ -1,5 +1,6 @@
 require_relative "objects/post"
 require_relative "objects/user"
+require "colorize"
 
 class App 
 
@@ -20,18 +21,14 @@ class App
   end
 
   def second_page
-    puts "1: See my INFO, 2: POSTS, 3: EDIT, 0: EXIT"
+    puts "Press 0: EXIT, 1: See my INFO, 2: POSTS"
     case gets_i
-    when 1
-      my_info
-    second_page
-    when 2
-      post_settings
-    when 3
-      edit_user
-      second_page
     when 0 
       log_out
+    when 1
+      my_info
+    when 2
+      post_settings
     else
       second_page
     end
@@ -39,42 +36,50 @@ class App
 
 
   def log_in
-    print "Email: "
+    if User.all.empty?
+      puts "For login first register"
+      registration
+    else
+    print "\nEmail: "
     email = gets_chomp
     print "Password: "
     password = gets_chomp
     @user =  User.where(email: email).first
     if @user.nil? 
-      puts "Sorry, no registered user with given email"
-      users_email.each do |emaill|
-        if  emaill.include? email[0]
-          puts "Did you mean ?  #{emaill}"
-        end
+      puts "Sorry, no registered user with given email "
+       arr = all_users_emails.select do |emaill|
+         emaill[0] == email[0]
       end
+       if !arr.empty?
+      puts "Did you mean?\n\t#{arr.join "\n\t"}"
       log_in
-    elsif @user.password != password
+       else
+         log_in
+       end
+    elsif @user.password != password || password == nil
       puts "Password is not match"
       log_in
     else
       puts "        Welcome #{@user.name}\n"
     end
   end
+  end
 
   def registration
-    user = User.new
+    @user = User.new
     print "Name: "
-    user.name = gets_chomp
+    @user.name = gets_chomp
     print "Surname: "
-    user.surname = gets_chomp
+    @user.surname = gets_chomp
     print "Age: "
-    user.age = gets_chomp.to_i
+    @user.age = gets_chomp.to_i
     print "Email: "
-    user.email = gets_chomp
+    @user.email = gets_chomp
     print "Password: "
-    user.password = gets_chomp
+    @user.password = gets_chomp
     print "Submit your data[y/n]? "
     if yes
-      user.save
+      @user.save
       puts "Congrats User is saved!!!"
     end
   end
@@ -86,6 +91,20 @@ class App
   Age: #{@user.age}
   Email: #{@user.email}\n
 EOF
+    puts "Press 0 for DELETE, 1 for BACK, 2 for EDIT"
+    case gets_i
+    when 0
+      delete_user
+      log_out
+    when 1
+      second_page
+    when 2
+      edit_user
+      second_page
+    else
+      second_page
+    end
+
   end
 
   def edit_user
@@ -110,6 +129,10 @@ EOF
         @user.save
         puts "Changes are saved!!!\n"
       end
+  end
+
+  def delete_user
+    @user.delete
   end
 
   def post_settings
@@ -158,10 +181,14 @@ EOF
     else
       puts "You have not a posts"
     end
+    posts
   end
 
   def delete_post
     posts = list_posts
+    if posts.empty?
+      puts "You have not a posts"
+    else
       puts "Which one do you want to delete?(Number of post)"
       answer = gets_i
       if answer > posts.length
@@ -174,6 +201,7 @@ EOF
           puts "Post is deleted!!!\n"
         end
       end
+    end
   end
 
   def edit_post
@@ -199,11 +227,11 @@ EOF
   end
 
   def gets_chomp
-    gets.chomp    
+    gets.strip.chomp    
   end
 
   def gets_i
-    gets_chomp.to_i
+    gets_chomp.strip.to_i
   end
 
   def yes
@@ -211,18 +239,14 @@ EOF
   end
 
   def log_out
-    puts "\nBye"
+    puts "\nBye :)".yellow
   end
 
-  def users_email
-	  emails = []
-     User.all.each do |user|
-	     emails.push(user.email)
-    end
-     emails
+  def all_users_emails
+	   User.all.map &:email 
   end
+
 end
-
 
 app = App.new
 app.first_page
