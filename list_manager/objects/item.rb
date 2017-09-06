@@ -1,6 +1,6 @@
 require_relative '../../lib/base'
 
-class Item
+class Item < Base
   field :name, :string
   field :list_id, :integer
   field :user_id, :integer

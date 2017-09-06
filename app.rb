@@ -70,11 +70,17 @@ class App
     @user = User.new
 
     print "Name: "
-    name = gets_chomp while !validate_presence?(gets_chomp)
+    name = gets_chomp
+    while !validate_presence?(name)
+      name = gets_chomp
+    end
     @user.name = name
 
     print "Surname: "
-    surname = gets_chomp while !validate_presence?(gets_chomp) 
+    surname = gets_chomp 
+    while !validate_presence?(surname)
+      surname = gets_chomp
+    end
     @user.surname = surname
 
     print "Age: "
@@ -86,11 +92,17 @@ class App
     @user.age = age.to_i
 
     print "Email: "
-    email = gets_chomp while validate_presence?(gets_chomp) 
+    email = gets_chomp
+    while !validate_presence?(email)
+      email = gets.chomp
+    end
     @user.email = email
 
     print "Password: "
-    password = gets_chomp while validate_presence?(gets_chomp)
+    password = gets_chomp
+    while !validate_presence?(password)
+      password = gets_chomp
+    end
     @user.password = password
 
     print "Submit your data[y/n]? "

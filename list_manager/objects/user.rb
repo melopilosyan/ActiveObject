@@ -23,8 +23,14 @@ class User < Base
   def add_item(name, list_id)
     list = List.search_by_id list_id
     return nil if list.nil?
-    
-    list.items
-      Item.create name: name, user_id: self.id, list_id: list_id
-
+    has_item = false
+    list.items.each do |item|
+      if item.user_id == self.id
+        has_item = true
+        puts "has item"
+        break
+      end
+    end
+    item = Item.create(name: name, user_id: self.id, list_id: list_id) if has_item == false
+  end
 end
