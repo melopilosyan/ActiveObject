@@ -15,6 +15,11 @@ class User < Base
     List.create name: name, user_id: self.id    
   end
   
+  # Optional description for the function
+  #
+  # @param [String] name
+  # @param [integer] list_id
+  # @return [Item/nil]
   def add_item(name, list_id)
     list = List.search_by_id list_id
     return nil if list.nil?
