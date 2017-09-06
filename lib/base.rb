@@ -3,7 +3,7 @@ require_relative "utils"
 class Base
   include Utils
   attr_accessor :id
-  
+
   class << self
 
     def inherited(child)
@@ -76,14 +76,11 @@ class Base
 
     def create(hash)
       o = new hash
-    self.class.before_create_func.each do |callback|
-      self.send callback
-    end
       o.save
-    self.class.after_create_func.each do |callback|
-      self.send callback
-    end
-    o
+      self.after_create_func.each do |callback|
+        self.send callback
+      end
+      o
     end
 
     def field(field_name, field_type)
@@ -95,10 +92,10 @@ class Base
     end
 
     def belongs_to(class_name)
-        define_method(class_name) do
-          klass = Module.const_get(class_name.to_s.capitalize)
+      define_method(class_name) do
+        klass = Module.const_get(class_name.to_s.capitalize)
         klass.search_by_id send("#{class_name}_id") 
-        end
+      end
     end
 
     def has_many(class_name)
@@ -108,7 +105,7 @@ class Base
       end
       #raise NameError, "Given #{class_name} expected existing class name"
     end
-    
+
     def define_event_handlers_for(event_name)
       define_singleton_method("before_#{event_name}_func") do
         instance_variable_get("@before_#{event_name}_func") || []
@@ -131,12 +128,12 @@ class Base
 
     end
 
-  def delete_all
-    all.each do |o|
-      o.delete 
+    def delete_all
+      all.each do |o|
+        o.delete 
+      end
+      true
     end
-    true
-  end
 
 
   end
@@ -209,7 +206,7 @@ class Base
     end
     result
   end
-  
+
 
 
   define_event_handlers_for :destroy

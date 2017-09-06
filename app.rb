@@ -40,49 +40,59 @@ class App
       puts "For login first register"
       registration
     else
-    print "\nEmail: "
-    email = gets_chomp
-    print "Password: "
-    password = gets_chomp
-    @user =  User.where(email: email).first
-    if @user.nil? 
-      puts "Sorry, no registered user with given email "
-       arr = all_users_emails.select do |emaill|
-         emaill[0] == email[0]
+      print "\nEmail: "
+      email = gets_chomp
+      print "Password: "
+      password = gets_chomp
+      @user =  User.where(email: email).first
+      if @user.nil? 
+        puts "\nSorry, no registered user with given email "
+        arr = all_users_emails.select do |emaill|
+          emaill[0] == email[0]
+        end
+        if !arr.empty?
+          puts "Did you mean?\n\t#{arr.join "\n\t"}"
+          log_in
+        else
+          log_in
+        end
+      elsif @user.password != password || password == nil
+        puts "Password is not match"
+        log_in
+      else
+        puts "        Welcome #{@user.name}\n"
       end
-       if !arr.empty?
-      puts "Did you mean?\n\t#{arr.join "\n\t"}"
-      log_in
-       else
-         log_in
-       end
-    elsif @user.password != password || password == nil
-      puts "Password is not match"
-      log_in
-    else
-      puts "        Welcome #{@user.name}\n"
     end
-  end
   end
 
   def registration
+    puts "\n        REGISTRATION"
     @user = User.new
+
     print "Name: "
-    name = gets_chomp
-    if !name.empty?
+    name = gets_chomp while !validate_presence?(gets_chomp)
     @user.name = name
-    else
-	    puts "Please Input User name "
-	    @user.name = gets_chomp
-    end
+
     print "Surname: "
-    @user.surname = gets_chomp
+    surname = gets_chomp while !validate_presence?(gets_chomp) 
+    @user.surname = surname
+
     print "Age: "
-    @user.age = gets_chomp.to_i
+    age = gets_chomp
+    until age =~ /\A\d+\z/
+      puts "Give me your age"
+      age = gets_chomp
+    end
+    @user.age = age.to_i
+
     print "Email: "
-    @user.email = gets_chomp
+    email = gets_chomp while validate_presence?(gets_chomp) 
+    @user.email = email
+
     print "Password: "
-    @user.password = gets_chomp
+    password = gets_chomp while validate_presence?(gets_chomp)
+    @user.password = password
+
     print "Submit your data[y/n]? "
     if yes
       @user.save
@@ -90,26 +100,36 @@ class App
     end
   end
 
+  def validate_presence?(string)
+    if string.empty?
+      puts "Input your data"
+      false
+    else
+      true
+    end
+  end
+
   def my_info
-      print <<EOF
+    print <<EOF
   Name: #{@user.name}
   Surname: #{@user.surname}
   Age: #{@user.age}
   Email: #{@user.email}\n
 EOF
-    puts "Press 0 for DELETE, 1 for BACK, 2 for EDIT"
-    case gets_i
-    when 0
-      delete_user
-      log_out
-    when 1
-      second_page
-    when 2
-      edit_user
-      second_page
-    else
-      second_page
-    end
+
+  puts "Press 0 for DELETE, 1 for BACK, 2 for EDIT"
+  case gets_i
+  when 0
+    delete_user
+    log_out
+  when 1
+    second_page
+  when 2
+    edit_user
+    second_page
+  else
+    second_page
+  end
 
   end
 
@@ -122,19 +142,19 @@ EOF
     surname = gets_chomp
     @user.surname = surname unless surname.empty?
     print "age: "
-    age = gets_chomp
-    @user.age = age unless age.empty?
+    age = gets_i
+    @user.age = age unless age == 0
     print "email: "
     email = gets_chomp
     @user.email = email unless email.empty?
     print "password: "
     password = gets_chomp
     @user.password = password unless password.empty?
-      print "Save changes[y/n]? "
-      if yes
-        @user.save
-        puts "Changes are saved!!!\n"
-      end
+    print "Save changes[y/n]? "
+    if yes
+      @user.save
+      puts "Changes are saved!!!\n"
+    end
   end
 
   def delete_user
@@ -142,7 +162,7 @@ EOF
   end
 
   def post_settings
-    puts "       \n Post settings"
+    puts "\n            POST SETTINGS"
     puts "1: add post, 2: delete post, 3: edit post, 4: list posts, 5: back"
     case gets_i
     when 1
@@ -159,33 +179,41 @@ EOF
       post_settings
     when 5
       second_page
+    else 
+      post_settings
+    end
   end
-  end
-    
+
   def add_post
-      post = Post.new
-      post.user_id = @user.id
-      print "Post title: "
-      post.title = gets_chomp
-      print "Post description: "
-      post.description = gets_chomp
-      print "Submit your data[y/n]? "
-      if yes
-        post.save
-        puts "Post is saved!!!\n"
-      end
+    @post = Post.new
+    @post.user_id = @user.id
+
+    print "Post title: "
+    title = gets_chomp 
+    while !validate_presence?(title) 
+      title = gets_chomp
+    end
+    @post.title = title 
+
+    print "Post description: "
+    description = gets_chomp while !validate_presence?(gets_chomp)
+    @post.description = description  
+
+    print "Submit your data[y/n]? "
+    if yes
+      @post.save
+      puts "Post is saved!!!\n"
+    end
   end
 
   def list_posts
-    puts "\nLIST POSTS"
+    puts "\n            LIST POSTS"
     posts =  @user.posts
     if posts.empty?
-	    puts "You have not a posts"
-	    post_settings
+      puts "No posts"
     else
-      puts "\nYour posts: "
       posts.each_with_index do |post,i|
-        puts "#{i+1}. Post title: #{post.title}, description: #{post.description}"
+        puts "#{i+1}. #{post.title}"
       end
     end
     posts
@@ -193,9 +221,10 @@ EOF
 
   def delete_post
     posts = list_posts
+    if !posts.empty?
       puts "Which one do you want to delete?(Number of post)"
       answer = gets_i
-      if answer > posts.length
+      if answer > posts.length || answer <= 0
         puts "\nArong number of post, choose right number"
         delete_post
       else
@@ -205,26 +234,29 @@ EOF
           puts "Post is deleted!!!\n"
         end
       end
+    end
   end
 
   def edit_post
     posts = list_posts
-    puts "Which one do you want to change?"
-    answer = gets_i
-    if answer > posts.length
-      puts "\nArong number of post,choose rigth number"
-      edit_post
-    else
-      print "Title: "
-      title = gets_chomp
-      posts[answer-1].title = title unless title.empty?
-      print "Description: "
-      description = gets_chomp
-      posts[answer-1].description = description unless description.empty?
-      print "Save changes[y/n]? "
-      if yes
-        posts[answer-1].save
-        puts "Changes are saved!!!\n"
+    if !posts.empty?
+      puts "Which one do you want to change?"
+      answer = gets_i
+      if answer > posts.length || answer <= 0
+        puts "\nArong number of post,choose rigth number"
+        edit_post
+      else
+        print "Title: "
+        title = gets_chomp
+        posts[answer-1].title = title unless title.empty?
+        print "Description: "
+        description = gets_chomp
+        posts[answer-1].description = description unless description.empty?
+        print "Save changes[y/n]? "
+        if yes
+          posts[answer-1].save
+          puts "Changes are saved!!!\n"
+        end
       end
     end
   end
@@ -246,7 +278,7 @@ EOF
   end
 
   def all_users_emails
-	   User.all.map &:email 
+    User.all.map &:email 
   end
 
 end
