@@ -2,7 +2,7 @@ require_relative "utils"
 
 class Base
   include Utils
-  attr_accessor :id
+  attr_accessor :id, :create_time
 
   class << self
 
@@ -75,6 +75,9 @@ class Base
     end
 
     def create(hash)
+      self.before_create_func.each do |callback|
+        self.send callback
+      end
       o = new hash
       o.save
       self.after_create_func.each do |callback|
@@ -142,6 +145,7 @@ class Base
   def initialize(hash = nil)
     @id = self.class.next_id
     self.update hash
+    @create_time = Time.now
   end
 
 

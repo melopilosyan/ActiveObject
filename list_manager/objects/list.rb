@@ -5,4 +5,7 @@ class List < Base
   field :user_id, :integer
   belongs_to :user
   has_many :items
+
+
+
 end
