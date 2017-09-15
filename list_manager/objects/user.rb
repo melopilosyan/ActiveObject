@@ -9,6 +9,7 @@ class User < Base
   field :password, :string
   has_many :lists
   has_many :items
+  after_destroy :delete_lists
 
   #
   def add_list(name)
@@ -33,4 +34,11 @@ class User < Base
     end
     item = Item.create(name: name, user_id: self.id, list_id: list_id) if has_item == false
   end
+  
+  def delete_lists
+    self.lists.each do |list|
+      list.delete
+    end
+  end
+
 end

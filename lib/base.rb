@@ -8,6 +8,8 @@ class Base
 
     def inherited(child)
       if Dir.exist?("data/#{child.name.downcase}")
+        puts child.name + ' objects count ' + Dir.glob("data/#{child.name.downcase}/*.json").size.to_s
+
         child.count = Dir.glob("data/#{child.name.downcase}/*.json").size
       else
         Dir.mkdir("data/#{child.name.downcase}")
@@ -68,6 +70,10 @@ class Base
         a.push o if valid
       end
       a
+    end
+
+    def any?
+      !all.empty? 
     end
 
     def file_path(id)
@@ -143,7 +149,11 @@ class Base
 
 
   def initialize(hash = nil)
+    if hash != nil && hash.has_key?("id")
+    @id = hash[:id]
+    else
     @id = self.class.next_id
+    end
     self.update hash
     @create_time = Time.now
   end

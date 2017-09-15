@@ -2,6 +2,7 @@ require "colorize"
 require "highline/import"
 require "table_print"
 require "text-table"
+require "json"
 
 require_relative "objects/user"
 require_relative "objects/item"
@@ -11,31 +12,43 @@ require_relative "helpers/notifier"
 
 class App
 
+  def initialize 
+    if File.exist? "data/session.json"
+      hash = JSON.parse  File.read "data/session.json"
+      if !hash.empty?
+        @user = User.search_by_id hash["id"]
+        puts @user.to_s
+        my_page
+      end
+    else
+      File.write("data/session.json", "{}")
+    end
+  end
+
   def first_page
     title "List Manager"
-     case menu :Exit, "Sign In", "Sign Up", "Active Lists"
-     when 1
-      # sign_out
-     when 2 
-       sign_in
-     when 3
-       sign_up
-       my_page
-     when 4
-       list_table
-       change_list_menu
-     else
-       first_page
-     end
-  end
-  
-    def title(title)
-      l = (60 - title.length - 2 ) / 2
-      line = (" " *  l).colorize background: :blue
-      puts "\n#{line} #{title.blue} #{line}\n\n"
-
+    case menu  "Sign In", "Sign Up", "Active Lists", "Exit"
+    when 1 
+      sign_in
+    when 2
+      sign_up
+      my_page
+    when 3
+      list_table
+      change_list_menu
+    when 4
+      exit
+    else
+      first_page
     end
+  end
 
+  def title(title)
+    l = (60 - title.length - 2 ) / 2
+    line = (" " *  l).colorize background: :blue
+    puts "\n#{line} #{title.blue} #{line}\n\n"
+
+  end
 
   def sign_in
     title "Sign In"
@@ -48,16 +61,20 @@ class App
       @user = User.where(email: email).first
       if @user.nil?
         Notifier.send "Log In", "Sorry, no registered user with #{email}", 1
-        #system("notify-send 'Log In' 'No registered user with #{email}' -t 0")
         arr = all_users_emails.select do |emaill|
-            emaill[0] == email[0]
+          emaill[0] == email[0]
         end
         Notifier.send "Sign In", "Did you mean? \n\t#{arr.join "\n\t"}", 50 unless arr.empty?
-        sign_in
+        first_page
       elsif @user.password != password || password == nil
         Notifier.send "Sign In", "Password is not match", 50
         first_page
       else
+        puts "Remember email and password? "
+        if yes_or_no.downcase == 'y'
+          save_user_in_session 
+        end
+    Notifier.send "My Page", "Welcome  #{@user.name}", 2000, :info
         my_page
       end
     end
@@ -70,93 +87,248 @@ class App
   end
 
   def change_list_menu
-    puts "\nIf you want add list/item first Sign In".blue.underline
+    puts "\nIf you want add list/item first Sign In".blue
     first_page
   end
 
-
   def my_page
-    Notifier.send "My Page", "Welcome  #{@user.name}", 2000, :info
-    #    system("notify-send 'sign In' 'Save user?' -t   0")
     title "My Page"
-    case menu("Exit","Show Lists","Show Items")
+    l = 60 - 2 - (@user.name.length + @user.surname.length)
+    puts "#{" " * l}#{@user.name} #{@user.surname}".blue
+    case menu("Lists", "My info", "Edit","Log out", "Exit")
     when 1
-      sign_out
-    when 2
       all_lists
-      list_settings
-    when 3
-      all_items
+    when 2
+      my_info
       my_page
+    when 3
+      edit_user
+      my_page
+    when 4
+      sign_out
+    when 5
+      exit
     end
   end
 
+    def my_info
+      title "My Info"
+  print <<EOF
+Name: #{@user.name}
+Surname: #{@user.surname}
+Email: #{@user.email}\n
+EOF
+    end
+
+
+
+
+
+  def edit_user
+    my_info
+    title "Edit your info"
+    name = ask("\nEnter your Name: ".blue) 
+    @user.name = name unless name.empty?
+
+    surname = ask("Enter your Surname: ".blue)
+    @user.surname = surname unless surname.empty?
+
+    email = ask("Enter your Email: ".blue)
+    @user.email = email unless email.empty?
+
+    password = ask("Enter your Password: ".blue) {|q| q.echo = "*"}
+    @user.password = password unless password.empty?
+
+    confirm = ask("Save changes? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+    if confirm == 'y'
+      @user.save 
+    end
+    my_info
+  end
+
+  def save_user_in_session
+    hash = JSON.parse File.read "data/session.json"
+    hash[:id] = @user.id
+    File.write("data/session.json", hash.to_json)
+  end
+
+  def delete_user_in_session
+    hash = JSON.parse File.read "data/session.json"
+    hash.delete"id"
+    File.write("data/session.json", hash.to_json)
+  end
+
   def all_lists
+    puts "\n#{@user.name}/lists".blue
     if List.any?
-    puts blue_bold "\nList Table\n"
-    print_table "N", "List Name", "User Id", List.all
-    else
-      puts "No data"
+      puts blue_bold "\nList Table\n"
+      puts List.all
+      print_table "N", "List Name", "User Name", List.all 
+      case menu "Add list", "Select list", "Log out", "Exit"
+      when 1
+        add_list
+      when 2
+      given_id = ask("Which one do you want select?(N)".blue, Integer) {|q| q.in =1..@user.lists.length }
+      @list = List.search_by_id given_id
+      puts "\n#{@user.name}/lists/#{@list.name}".blue
+      list_settings
+      when 3
+        sign_out
+      when 4
+        exit
+      end
+    elsif @user.lists.empty?
+      puts "\nNo lists\n".blue
+      case menu "Add list", "Back", "Exit", "Log out"
+      when 1
+        add_list
+        my_page
+      when 2
+        my_page
+      when 3
+        exit
+      when 4
+        sign_out
+      end
     end
   end
 
   def all_items
+    puts "#{@user.name}/lists/#{@list.name}/items"
     if Item.any?
-    puts "\nItem Table\n".blue.bold
-      print_table "Item Name", "List Id", "User Id", @user.items
+      puts blue_bold "\nItem Table\n"
+      print_table "Item name", "User Name", "List name", @list.items
     else
-      puts "No data"
+      puts "No items"
     end
   end
 
   def list_settings
     title "List Settings"
-    case menu "Add list", "Change list", "Delete list", "Back"
-    when 1
-      add_list
-      list_settings
-    when 2
-      change_list
-    when 3
-      delete_list
-    when 4
+    if !@list.items.empty?  
+      case menu "Items","Edit List","Delete list", "Edit Item","Delete Item","Back", "Exit", "Log out"
+      when 1
+        all_items
+        list_settings
+      when 2
+        change_list
+        list_settings
+      when 3
+        delete_list
+        list_settings
+      when 4
+        change_item
+        list_settings
+      when 5
+        delete_item
+        list_settings
+      when 6
+        all_items
+      when 7
+        exit
+      when 8
+        sign_out
+      end
+    elsif @user.lists.empty?
+      case menu "Add list", "Back", "Exit", "Log out"
+      when 1
+        add_list
+      when 2
+        my_page
+      when 3
+        exit
+      when 4
+        sign_out
+      end
+    else  
+      case menu "Add Item","Edit", "Delete", "Back","Exit","Log out"
+      when 1
+        add_item
+        list_settings
+      when 2
+        list_settings
+        my_page
+      when 3
+        delete_list
+        list_settings
+      when 4
+        my_page
+      when 5 
+        exit
+      when 6
+        sign_out
+      end
     end
+
   end
-    
+
   def add_list
-   name = ask("\nEnter listname: ".blue) 
-   while  !List.where(name: name).empty?
-     puts "Sorry, there is a list with given name"
-   name = ask("\nEnter listname: ".blue) 
+    name = ask("\nEnter listname: ".blue) 
+    while  !List.where(name: name).empty?
+      puts "Sorry, there is a list with given name"
+      name = ask("\nEnter listname: ".blue) 
     end
-   yes_or_no.downcase == 'y' ? @user.add_list(name) :  my_page
+    if yes_or_no.downcase == 'y' 
+      @user.add_list(name)
+    end
+      my_page
   end
 
   def change_list
-    ask("Which one do you want to change?(number)".blue, Integer) {|q| q.in =1..6 }
+    @list.name = ask("\nEnter new listname: ")
+    yes_or_no.downcase == 'y' ? @list.save : list_settings
+    else
   end
 
+  def delete_list
+    yes_or_no.downcase == 'y' ? @list.delete : list_settings
+  end
+
+  def show_list_items
+    all_lists
+    if List.any? 
+      list = List.search_by_id ask("Number of list".blue, Integer)
+      if !list.items.empty?
+        print_table "Item Name", "User name", "List name", list.items
+      else
+        puts "\nNo Item\n".blue
+      end
+    end
+  end
+
+  def add_item
+    if !@user.lists.empty?
+    item_name = ask("Item name:  ".blue)
+    yes_or_no.downcase == 'y' ? @user.add_item(item_name ,@list.id) :  all_lists
+  end
+  end
+
+  def change_item
+    item = Item.where(list_id: @list.id)[0]
+    item.name =  ask("Input new name:  ".blue)
+    yes_or_no.downcase == 'y' ? item.save :  list_settings
+  end
+
+  def delete_item
+    item = Item.where(list_id: @list.id)[0]
+    yes_or_no.downcase == 'y' ? item.delete : list_settings
+  end
 
   def print_table(*head, rows)
     build_func = "build_#{rows.first.class.name.downcase}_row"
     puts "#{Text::Table.new head: head, rows: rows.map {|row| send(build_func, row) }}\n"
   end
 
-
   def build_list_row(list)
-    number = nil
-    List.all.each_with_index do |list, i|
-      number = i+1
-    build_tb_raw [number, list.name, list.user_id],
-                 list.user_id == @user.id ? :red : nil
+    build_tb_raw [list.id, list.name, User.search_by_id(list.user_id).name],
+      list.user_id == @user.id ? :red : nil
   end
-  end
-
 
   def build_item_row(item)
-    build_tb_raw [item.name, item.list_id, item.user_id],
-                 item.user_id == @user.id ? :red : nil
+    build_tb_raw [item.name, User.search_by_id(item.user_id).name, List.search_by_id(item.list_id).name],
+      item.user_id == @user.id ? :red : nil
   end
+
   def build_tb_raw(cells,color )
     cells.map do |cell|
       {value: cell, cb: color}
@@ -164,35 +336,35 @@ class App
   end
 
   def sign_up
+    title "Sign Up"
     @user = User.new
-    puts "\n#{@under_line}Sign Up#{@under_line}".blue.bold
 
+    name = ask("\nEnter your Name: ".blue) 
+    while !validate_presence? name
       name = ask("\nEnter your Name: ".blue) 
-      while !validate_presence? name
-      name = ask("\nEnter your Name: ".blue) 
-      end
-      @user.name = name
+    end
+    @user.name = name
 
-      surname = ask("Enter your Surname: ".blue)
-      while !validate_presence? surname
+    surname = ask("Enter your Surname: ".blue)
+    while !validate_presence? surname
       surname = ask("\nEnter your Surname: ".blue) 
-      end
-      @user.surname = surname
+    end
+    @user.surname = surname
 
-      email = ask("Enter your Email: ".blue)
-      while !validate_presence? email
+    email = ask("Enter your Email: ".blue)
+    while !validate_presence? email
       email = ask("\nEnter your Email: ".blue) 
-      end
-      @user.email = email
+    end
+    @user.email = email
 
-      password = ask("Enter your Password: ".blue) {|q| q.echo = "*"}
-      while !validate_presence? password
+    password = ask("Enter your Password: ".blue) {|q| q.echo = "*"}
+    while !validate_presence? password
       password = ask("\nEnter your Password: ".blue) {|q| q.echo = "*"} 
-      end
-      @user.password = password
+    end
+    @user.password = password
 
-      confirm = ask("Save account? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
-      confirm.downcase == 'y' ? @user.save  : first_page
+    confirm = ask("Save account? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+    confirm == 'y' ? @user.save  : first_page
   end
 
   def all_users_emails
@@ -217,7 +389,7 @@ class App
       puts blue_bold "#{i+1}. #{name}"
     end
     answer = ask("Choose ", Integer) {|q| q.in = 1..name.length}
-      answer
+    answer
   end
 
   def blue_bold(str)
@@ -225,8 +397,13 @@ class App
   end
 
   def yes_or_no
-     confirm = ask("Do it? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate   = /[yn]/i }
-     confirm
+    confirm = ask("Do it? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate   = /[yn]/i }
+    confirm.downcase
+  end
+
+  def sign_out
+    delete_user_in_session
+    puts "Bye".blue
   end
 
 end
