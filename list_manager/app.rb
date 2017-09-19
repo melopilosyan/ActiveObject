@@ -53,7 +53,7 @@ class App
   def sign_in
     title "Sign In"
     if !User.any?
-      puts "\nFor Sign In first Sign Up".blue
+      say("\nFor Sign In first Sign Up").blue
       yes_or_no.downcase == 'y' ? sign_up : first_page
     else
       email = ask("\nEnter your Email: ".blue)
@@ -70,8 +70,8 @@ class App
         Notifier.send "Sign In", "Password is not match", 50
         first_page
       else
-        puts "Remember email and password? "
-        if yes_or_no.downcase == 'y'
+         confirm = yes_or_no "Remember email and password?"
+        if confirm  == 'y'
           save_user_in_session 
         end
     Notifier.send "My Page", "Welcome  #{@user.name}", 2000, :info
@@ -139,7 +139,7 @@ EOF
     password = ask("Enter your Password: ".blue) {|q| q.echo = "*"}
     @user.password = password unless password.empty?
 
-    confirm = ask("Save changes? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+    confirm = yes_or_no "Save changes?"
     if confirm == 'y'
       @user.save 
     end
@@ -162,13 +162,12 @@ EOF
     puts "\n#{@user.name}/lists".blue
     if List.any?
       puts blue_bold "\nList Table\n"
-      puts List.all
       print_table "N", "List Name", "User Name", List.all 
       case menu "Add list", "Select list", "Log out", "Exit"
       when 1
         add_list
       when 2
-      given_id = ask("Which one do you want select?(N)".blue, Integer) {|q| q.in =1..@user.lists.length }
+      given_id = ask("Which one do you want select?(N)".blue, Integer) {|q| q.in =1..List.all.length }
       @list = List.search_by_id given_id
       puts "\n#{@user.name}/lists/#{@list.name}".blue
       list_settings
@@ -205,7 +204,7 @@ EOF
 
   def list_settings
     title "List Settings"
-    if !@list.items.empty?  
+    if !@list.items.empty? && @list.user_id == @user.id && !@user.items.empty?
       case menu "Items","Edit List","Delete list", "Edit Item","Delete Item","Back", "Exit", "Log out"
       when 1
         all_items
@@ -233,6 +232,36 @@ EOF
       case menu "Add list", "Back", "Exit", "Log out"
       when 1
         add_list
+      when 2
+        my_page
+      when 3
+        exit
+      when 4
+        sign_out
+      end
+    elsif @user.id != @list.id && !@list.items.empty?
+      case menu "Items","Edit item","Delete item", "Back", "Exit", "Log out"
+      when 1
+        all_items
+        my_page
+      when 2
+        change_item
+        my_page
+      when 3
+        delete_item
+        my_page
+      when 4
+        my_page
+      when 5
+        exit
+      when 6
+        sign_out
+      end
+    elsif @user.id != @list.id
+      case menu "Add Item", "Back", "Exit", "Log out"
+      when 1
+        add_item
+        my_page
       when 2
         my_page
       when 3
@@ -268,7 +297,7 @@ EOF
       puts "Sorry, there is a list with given name"
       name = ask("\nEnter listname: ".blue) 
     end
-    if yes_or_no.downcase == 'y' 
+    if yes_or_no "Save list?" == 'y' 
       @user.add_list(name)
     end
       my_page
@@ -276,12 +305,11 @@ EOF
 
   def change_list
     @list.name = ask("\nEnter new listname: ")
-    yes_or_no.downcase == 'y' ? @list.save : list_settings
-    else
+    yes_or_no "Save changes?" == 'y' ? @list.save : list_settings
   end
 
   def delete_list
-    yes_or_no.downcase == 'y' ? @list.delete : list_settings
+    yes_or_no "Are you sure?" == 'y' ? @list.delete : list_settings
   end
 
   def show_list_items
@@ -299,19 +327,22 @@ EOF
   def add_item
     if !@user.lists.empty?
     item_name = ask("Item name:  ".blue)
-    yes_or_no.downcase == 'y' ? @user.add_item(item_name ,@list.id) :  all_lists
+    confirm = yes_or_no "Save item?"
+    confirm  == 'y' ? @user.add_item(item_name ,@list.id) :  all_lists
   end
   end
 
   def change_item
     item = Item.where(list_id: @list.id)[0]
     item.name =  ask("Input new name:  ".blue)
-    yes_or_no.downcase == 'y' ? item.save :  list_settings
+    confirm = yes_or_no"Save changes?"
+    confirm == 'y' ? item.save :  list_settings
   end
 
   def delete_item
-    item = Item.where(list_id: @list.id)[0]
-    yes_or_no.downcase == 'y' ? item.delete : list_settings
+    item = Item.where(list_id: @list.id, user_id: @user.id)[0]
+    confirm = yes_or_no"Are you sure?"
+    confirm == 'y' ? item.delete : list_settings
   end
 
   def print_table(*head, rows)
@@ -363,7 +394,7 @@ EOF
     end
     @user.password = password
 
-    confirm = ask("Save account? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+    confirm = yes_or_no"Save account?"
     confirm == 'y' ? @user.save  : first_page
   end
 
@@ -396,8 +427,8 @@ EOF
     str.blue.bold
   end
 
-  def yes_or_no
-    confirm = ask("Do it? [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate   = /[yn]/i }
+  def yes_or_no(question)
+    confirm = ask("#{question} [Y/N] ".blue) { |yn| yn.limit = 1, yn.validate   = /[yn]/i }
     confirm.downcase
   end
 
