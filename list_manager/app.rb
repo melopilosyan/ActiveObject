@@ -257,7 +257,7 @@ EOF
       when 6
         sign_out
       end
-    elsif @user.id != @list.id
+    elsif @user.id != @list.user_id
       case menu "Add Item", "Back", "Exit", "Log out"
       when 1
         add_item
@@ -297,7 +297,8 @@ EOF
       puts "Sorry, there is a list with given name"
       name = ask("\nEnter listname: ".blue) 
     end
-    if yes_or_no "Save list?" == 'y' 
+    confirm = yes_or_no "Save list?"
+    if confirm == 'y' 
       @user.add_list(name)
     end
       my_page
