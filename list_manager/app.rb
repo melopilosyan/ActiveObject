@@ -239,7 +239,7 @@ EOF
       when 4
         sign_out
       end
-    elsif @user.id != @list.id && !@list.items.empty?
+    elsif !@user.items.empty? && @user.id == @list.user_id 
       case menu "Items","Edit item","Delete item", "Back", "Exit", "Log out"
       when 1
         all_items
