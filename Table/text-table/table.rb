@@ -170,6 +170,9 @@ module Text #:nodoc:
       rendered_rows.unshift [separator, text_table_head.to_s] if head
       rendered_rows << [text_table_foot.to_s, separator] if foot
       rendered_rows.join
+
+      #Table all items color
+      #rendered_rows.join.send(:red)
     end
 
     #  Aligns the cells and the footer of a column.

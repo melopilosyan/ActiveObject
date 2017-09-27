@@ -25,7 +25,7 @@ module Text #:nodoc:
         @row     = options[:row]
         @align   = options[:align  ] || :left
         @colspan = options[:colspan] || 1
-        @callback = options[:color] || :to_s
+        @color = options[:color] || :to_s
 	      @bgcolor = options[:bgcolor]
       end
 
@@ -37,10 +37,7 @@ module Text #:nodoc:
           value.rjust cell_width
         when :center
           value.center cell_width
-      end
-
-      val_str.send(@callback)
-
+      end.send(@color)
       if @bgcolor.nil?
         ([' ' * table.horizontal_padding]*2).join val_str
       else
