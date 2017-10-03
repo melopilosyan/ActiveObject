@@ -1,27 +1,52 @@
-require_relative "../objects/user.rb"
-require_relative "../objects/post.rb"
 
-#User.new(name: "name_1", surname: "surname_1", age: 1).save
-#User.new(name: "name_2", surname: "surname_2", age: 2).save
-#User.new(name: "name_1", surname: "surname_2", age: 3).save
-#User.new(name: "name_2", surname: "surname_1", age: 4).save
+require_relative "../../table/text-table.rb"
 
-#select = User.where(name: "name_1")
+ table = Text::Table.new do |t|
+    t.head = ['A', 'B', 'C']
+    t.rows = [['a1', {value: 'b1', bmark: :red}, 'c1']]
+    t.rows << [{mark: :red}, 'a2', 'b2', 'c3']
+    t.rows << [{value: 'a3', mark: :blue}, 'b3', 'c3']
+ end
 
-select = User.where("name == name_1")
+ puts table
+  
+  class Array
 
-puts
-select.each do |o| 
-  p o
-end
-puts
+    def chang(items, how)
+      case items
+      when Integer
+        (items..(self.length-1)).each do |i| 
+          self[i] = self[i].send(how)
+        end
+      when Range
+        items.each do |i| 
+          self[i] = self[i].send(how)
+        end
+      else
+        msg = "expected \"Integer\" or \"Range\", given \"#{items.class}\""
+        raise ArgumentError.new msg
+      end
+      self
+    end
 
+    def select_by_index(*indexes) 
+      arr = []
+      indexes.each do |i|
+        if i > -1 && i < self.length
+          arr << self[i]
+        else
+          msg = "undefined index #{i} for #{p self}"
+          raise ArgumentError.new(msg)
+        end
+      end
+      arr
+    end
 
+  end
+  
+  #p ['1', '2', '3', '4', '5'].chang(0, :to_i)
+  #p ['1', '2', '3', '4', '5'].select_by_index(0, 4, 1, 3, 3)
 
-#u = User.new(name: "hvjhvj")
-#p u
-#a = User.new.to_hash
-#p a
-#User.table
-#puts User.field_types
-#puts Post.field_types
+ 
+ 
+  

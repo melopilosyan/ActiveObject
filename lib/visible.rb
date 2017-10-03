@@ -25,13 +25,17 @@ module Visible
  def drow_table(list, h)
   size = table_width(list, h)
   width = (size.sum + 3 * size.length)/2 + 1
-  puts self.name.colorize(:red) + "s".colorize(:red)
+  #puts self.name.colorize(:red) + "s".colorize(:red)
   puts("+ ".colorize(:blue) * width)
   h.each_with_index do |x, i| 
     print "+".colorize(:blue) + " #{x} ".colorize(:red) + (" " * (size[i] - x.length))
     print "+\n".colorize(:blue) if i == h.length - 1
   end
-
+=begin
+  list.sort_by! do |x| 
+    x[:id]
+  end
+=end
   list.each do |val|
     puts("+ ".colorize(:blue) * width)
     i = 0

@@ -62,9 +62,8 @@ module Search
   def when_string(cond, objects, findes) 
     c = cond.split
     check_condition(c)
-
     objects.each do |o|
-      raise ArgumentError.new("invalid name_field \":#{c[0]}\"") unless o.respond_to? c[0]
+      raise ArgumentError.new("invalid name_field \"#{c[0]}\" for #{o.class}") unless o.respond_to? c[0]
       field_val = o.send(c[0])
       next if field_val.nil?
       if field_val.respond_to? c[1]

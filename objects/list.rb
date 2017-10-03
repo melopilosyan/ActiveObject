@@ -1,13 +1,11 @@
 require_relative "../lib/base.rb"
 
-class Post < Base
- 
-  field :title, :string
-  field :description, :string
+class List < Base
+
+  field :name, :string
   field :user_id, :integer
+  has_many :items
   belongs_to :user
+  
 
-   
 end
-
-
